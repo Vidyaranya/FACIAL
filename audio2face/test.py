@@ -31,9 +31,9 @@ for audio_path in audio_list:
     processed_audio = pickle.load(open(audio_path, 'rb'), encoding=' iso-8859-1')
     
 
-    modelgen = TfaceGAN().cuda()
+    modelgen = TfaceGAN()
 
-    modelgen.load_state_dict(torch.load(opt.checkpath))
+    modelgen.load_state_dict(torch.load(opt.checkpath, map_location=torch.device('cpu')) )
     modelgen.eval()
 
     processed_audio = torch.Tensor(processed_audio)
@@ -48,9 +48,9 @@ for audio_path in audio_list:
     with torch.no_grad():
         for i in range(0,processed_audio.shape[0]-127, 127):
             
-            audio = processed_audio[i:i+128,:,:].unsqueeze(0).cuda()
+            audio = processed_audio[i:i+128,:,:].unsqueeze(0)
 
-            _faceparam = modelgen(audio,firstpose.cuda())
+            _faceparam = modelgen(audio,firstpose)
 
 
             firstpose = _faceparam[:,127:128,:]
@@ -59,9 +59,9 @@ for audio_path in audio_list:
             # last audio sequence
             if i+127 >= processed_audio.shape[0]-127:
                 j = processed_audio.shape[0]-128
-                audio = processed_audio[j:j+128,:,:].unsqueeze(0).cuda()
+                audio = processed_audio[j:j+128,:,:].unsqueeze(0)
                 firstpose = _faceparam[:,j-i:j-i+1,:]
-                _faceparam = modelgen(audio,firstpose.cuda())
+                _faceparam = modelgen(audio,firstpose)
                 faceparams[j:j+128,:] = _faceparam[0,:,:].cpu().numpy()
 
         np.savez(frames_out_path, face = faceparams)
